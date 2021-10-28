@@ -23,6 +23,7 @@ func (receiver *Transfer) WritePkg(msg *Message) (err error) {
 		return
 	}
 	binary.BigEndian.PutUint32(receiver.Buf[:4], uint32(len(msgStr)))
+	// receiver.Buf[0] = 's'
 	n, err := receiver.Conn.Write(receiver.Buf[:4])
 	if n != 4 || err != nil {
 		return
@@ -45,7 +46,12 @@ func (receiver *Transfer) ReadPkg() (msg Message, err error) {
 	}
 	pkgLen := int(binary.BigEndian.Uint32(receiver.Buf[:4]))
 	n, err := receiver.Conn.Read(receiver.Buf[:])
-	if n != pkgLen || err != nil {
+	if err != nil {
+		err = ERR_EOF
+		return
+	}
+	if n != pkgLen {
+		err = ERR_DATA_SHATTERED
 		return
 	}
 	err = json.Unmarshal(receiver.Buf[:pkgLen], &msg)

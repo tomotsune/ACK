@@ -33,20 +33,24 @@ func process(conn net.Conn) {
 	expiredSec := "0"
 	for {
 		msg, err := transfer.ReadPkg()
-		if err != nil {
+		if err == common.ERR_EOF {
+			fmt.Printf("%v连接断开..\n", conn.RemoteAddr())
 			return
+		}
+		if err == common.ERR_DATA_SHATTERED {
+			fmt.Println("错误数据, 丢弃")
 		}
 		if msg.Sec == expiredSec {
 			ack := &common.Message{Ack: expiredSec, Data: "无比特错的数据"}
 			time.Sleep(time.Millisecond * 2000)
-			transfer.WritePkg(ack)
+			_ = transfer.WritePkg(ack)
 			fmt.Printf("server: 确认%v;\n", expiredSec)
 			if expiredSec == "0" {
 				expiredSec = "1"
 			} else {
 				expiredSec = "0"
 			}
-		} else {
+		} else if msg.Sec == expiredSec {
 			lastSec := expiredSec
 			if lastSec == "0" {
 				lastSec = "1"
@@ -56,7 +60,7 @@ func process(conn net.Conn) {
 			fmt.Printf("server: 丢弃重复的%v帧, 从传确认%v;\n", lastSec, lastSec)
 			ack := &common.Message{Ack: expiredSec, Data: "无比特错的数据"}
 			time.Sleep(time.Millisecond * 1000)
-			transfer.WritePkg(ack)
+			_ = transfer.WritePkg(ack)
 		}
 	}
 }

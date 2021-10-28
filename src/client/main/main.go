@@ -48,6 +48,7 @@ func transmit(ackChan chan *common.Message, expiredSec string) {
 
 // checkTimeout
 func checkTimeout(ackChan chan *common.Message, frame *common.Message) {
+	// 1500 or 2500
 	span := time.Millisecond * 1500
 	timer := time.NewTimer(span)
 	for {
